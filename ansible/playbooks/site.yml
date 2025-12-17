@@ -1,0 +1,7 @@
+---
+- name: InfraBoard - Deploiement global
+  hosts: infra
+  become: yes
+
+  roles:
+    - docker-engine
