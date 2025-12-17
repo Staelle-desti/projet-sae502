@@ -1,0 +1,21 @@
+---
+- name: Copier docker-compose.yml sur l'hôte
+  copy:
+    src: ../../docker/docker-compose.yml
+    dest: /home/{{ ansible_user }}/docker-compose.yml
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+
+- name: Copier prometheus.yml sur l'hôte
+  copy:
+    src: ../../docker/prometheus.yml
+    dest: /home/{{ ansible_user }}/prometheus.yml
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+
+- name: Lancer la stack Docker Compose V2
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ ansible_user }}
+    state: present
