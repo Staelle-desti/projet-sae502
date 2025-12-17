@@ -1,0 +1,18 @@
+---
+- name: InfraBoard - Backup PostgreSQL
+  hosts: localhost
+  become: yes
+  vars:
+    backup_dir: /home/{{ ansible_user }}/backup
+
+  tasks:
+    - name: Créer un répertoire de backup
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Dump PostgreSQL
+      shell: docker exec infra_postgres pg_dump -U infra infra_db > {{ backup_dir }}/infra_db.sql
+      args:
+        executable: /bin/bash

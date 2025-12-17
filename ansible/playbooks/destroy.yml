@@ -1,0 +1,16 @@
+---
+- name: InfraBoard - Destroy stack
+  hosts: localhost
+  become: yes
+
+  tasks:
+    - name: Stop et supprimer tous les conteneurs
+      docker_container:
+        name: all
+        state: absent
+        force_kill: yes
+
+    - name: Supprimer le volume PostgreSQL
+      docker_volume:
+        name: pgdata
+        state: absent
