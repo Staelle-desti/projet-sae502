@@ -19,3 +19,19 @@
   community.docker.docker_compose_v2:
     project_src: /home/{{ ansible_user }}
     state: present
+
+- name: Copier le dossier backend sur l'hôte
+  copy:
+    src: ../../docker/backend
+    dest: /home/{{ ansible_user }}/backend
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Copier le dossier frontend sur l'hôte
+  copy:
+    src: ../../docker/frontend
+    dest: /home/{{ ansible_user }}/frontend
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
