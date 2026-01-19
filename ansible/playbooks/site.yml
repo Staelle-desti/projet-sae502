@@ -1,7 +1,7 @@
 ---
-- name: InfraBoard - Deploiement global
-  hosts: infra
-  become: yes
+- name: InfraBoard - Socle Docker
+  hosts: all
+  become: true
 
   roles:
     - docker-engine

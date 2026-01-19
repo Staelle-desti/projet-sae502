@@ -1,64 +1,90 @@
-version: "3.9"
+# DNS commun à tous les services
+x-dns: &default-dns
+  dns:
+    - 172.30.0.3
 
 services:
 
-  postgres:
-    image: postgres:15
-    container_name: infra_postgres
-    environment:
-      POSTGRES_USER: infra
-      POSTGRES_PASSWORD: infra
-      POSTGRES_DB: infra_db
+  infraboard-dns:
+    image: internetsystemsconsortium/bind9:9.20
+    container_name: infraboard-dns
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./dns/named.conf:/etc/bind/named.conf
+      - ./dns/zones:/etc/bind/zones
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.3
+
+  infraboard-web:
+    image: nginx:alpine
+    container_name: infraboard-web
+    <<: *default-dns
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    ports:
+      - "8081:80"
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.4
+
+  infraboard-dashboard:
+    image: nginx:alpine
+    container_name: infraboard-dashboard
+    <<: *default-dns
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    ports:
+      - "8001:80"
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.5
+
+  infraboard-db:
+    image: postgres:15
+    container_name: infraboard-db
+    <<: *default-dns
+    environment:
+      POSTGRES_DB: infraboard
+      POSTGRES_USER: infraboard
+      POSTGRES_PASSWORD: infraboard
     ports:
       - "5432:5432"
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.6
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: infra_prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  infraboard-collector:
+    image: python:3.11
+    container_name: infraboard-collector
+    <<: *default-dns
+    command: sleep infinity
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.7
+
+  infraboard-syslog:
+    image: balabit/syslog-ng:latest
+    container_name: infraboard-syslog
+    <<: *default-dns
     ports:
-      - "9090:9090"
+      - "514:514/udp"
+      - "514:514/tcp"
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.8
 
-  backend:
-    build: ./backend
-    container_name: infra_backend
-    environment:
-      DB_HOST: postgres
-      DB_NAME: infra_db
-      DB_USER: infra
-      DB_PASSWORD: infra
-    ports:
-      - "5000:5000"
-    depends_on:
-      - postgres
+  infraboard-router:
+    image: alpine
+    container_name: infraboard-router
+    <<: *default-dns
+    command: sleep infinity
+    networks:
+      infraboard-net:
+        ipv4_address: 172.30.0.9
 
-  agent1:
-    image: alpine:latest
-    container_name: infra_agent1
-    command: >
-      sh -c "while true; do curl -s -X POST -H 'Content-Type: application/json' -d '{\"cpu\":10}' http://backend:5000/metrics; sleep 10; done"
-    depends_on:
-      - backend
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: infra_grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-
-  frontend:
-    build: ./frontend
-    container_name: infra_frontend
-    ports:
-      - "8080:80"
-
-volumes:
-  pgdata:
+networks:
+  infraboard-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

@@ -1,0 +1,8 @@
+---
+- name: InfraBoard - Déploiement complet des conteneurs
+  hosts: all
+  become: true
+
+  roles:
+    - compose-deploy
+    - docker-engine
